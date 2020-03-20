@@ -5,11 +5,11 @@ function eval() {
 
 function expressionCalculator(expr) {
   let str = expr;
-  let pattern_mult_div = /(^|\(|\+|-|\*)\s*((-?\d+(\.\d+)?)\s*([*\/])\s*(-?\d+(\.\d+)?))/;
-  let pattern_mult_divg = /(^|\(|\+|-|\*)\s*((-?\d+(\.\d+)?)\s*([*\/])\s*(-?\d+(\.\d+)?))/g;
-  let pattern_sum_dif = /(^|\()\s*((-?\d+(\.\d+)?)\s*([-\+ss])\s*(-?\d+(\.\d+)?))\s*($|\)|-|\+)/;
-  let pattern_sum_difg = /(^|\()\s*((-?\d+(\.\d+)?)\s*([-\+ss])\s*(-?\d+(\.\d+)?))\s*($|\)|-|\+)/g;
-  let pattern = /\s*(-?\d+(\.\d+)?)\s*/g;
+  let pattern_mult_div = /(^|\(|\+|-|\*)\s*((-?\d+(\.\d+)?(e-?\d+)?)\s*([*\/])\s*(-?\d+(\.\d+)?(e-?\d+)?))/;
+  let pattern_mult_divg = /(^|\(|\+|-|\*)\s*((-?\d+(\.\d+)?(e-?\d+)?)\s*([*\/])\s*(-?\d+(\.\d+)?(e-?\d+)?))/g;
+  let pattern_sum_dif = /(^|\()\s*((-?\d+(\.\d+)?(e-?\d+)?)\s*([-\+ss])\s*(-?\d+(\.\d+)?(e-?\d+)?))\s*($|\)|-|\+)/;
+  let pattern_sum_difg = /(^|\()\s*((-?\d+(\.\d+)?(e-?\d+)?)\s*([-\+ss])\s*(-?\d+(\.\d+)?(e-?\d+)?))\s*($|\)|-|\+)/g;
+  let pattern = /\s*(-?\d+(\.\d+)?(e-?\d+)?)\s*/g;
 
     class ExpressionError extends Error {
     constructor(message) {
@@ -17,6 +17,13 @@ function expressionCalculator(expr) {
       this.name = "ExpressionError";
     }
   }
+
+  class TypeError extends Error {
+  constructor(message) {
+    super("TypeError: Division by zero.");
+    this.name = "TypeError";
+  }
+}
 
     function braketsCounter(str, braket) {
       if (braket == '(') {
@@ -37,12 +44,12 @@ function expressionCalculator(expr) {
 
     function bracketsVerification(str) {
       if ( braketsCounter(str, '(') != braketsCounter(str, ')') ) {
-        throw new ExpressionError("Brackets must be paired");
+        throw new ExpressionError("ExpressionError: Brackets must be paired");
       }   else {
         return str;
       }
     }
-  
+
     function removeBrackets(str) {
       let pattern2 = /\(\s*(-?\d+(\.\d+)?)\s*\)/g;
       while (str.match(pattern2)) {
@@ -53,7 +60,7 @@ function expressionCalculator(expr) {
 
     function mult_div(a, sign, b, sign2) {
       if ((sign == "/") & b == "0") {
-        throw new TypeError("Division by zero.");
+        throw new TypeError("TypeError: Division by zero.");
       }
       let result = ( sign == "*")? ( a * b): (a / b);
       if ((sign2 == "+") || (sign2 == "-") || (sign2 == "(") || (sign2 == "*"))  {
@@ -73,15 +80,17 @@ function expressionCalculator(expr) {
     }
 
     function mult() {
-      while (str.match(pattern_mult_divg)) {
-        str = str.replace(pattern_mult_divg, (match, p1, p2, p3, p4, p5, p6) => mult_div(p3, p5, p6, p1) );
+      while (str.match(pattern_mult_div)) {
+        str = str.replace(pattern_mult_div, (match, p1, p2, p3, p4, p5, p6, p7) => mult_div(p3, p6, p7, p1) );
+
         str = removeBrackets(str);
       }
+
     }
 
     function sum() {
-      while ( str.match(pattern_sum_difg) ) {
-        str = str.replace(pattern_sum_difg, (match, p1, p2, p3, p4, p5, p6, p7, p8) => sum_dif(p3, p5, p6, p1, p8) );
+      while ( str.match(pattern_sum_dif) ) {
+        str = str.replace(pattern_sum_dif, (match, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10) => sum_dif(p3, p6, p7, p1, p10) );
         str = removeBrackets(str);
       }
         }
@@ -93,8 +102,9 @@ function expressionCalculator(expr) {
   }
 
   let num = Number(str);
-  if ( Math.abs(num) > 10 ) {
-    return num.toFixed(4);
+  let num2 = num.toFixed(4);
+  if ( expr.match(pattern).length > 2) {
+    return Number(num2);
   }
   return num;
 }
